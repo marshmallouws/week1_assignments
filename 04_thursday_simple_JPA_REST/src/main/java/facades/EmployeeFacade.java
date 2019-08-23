@@ -5,6 +5,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
 
 /**
  *
@@ -38,17 +39,38 @@ public class EmployeeFacade {
 
     public Employee getEmployeeById(int id) {
         EntityManager em = getEntityManager();
-        return (Employee) em.createQuery("SELECT c FROM c.EMPLOYEE WHERE c.Id = :" + id).getResultList().get(0);
+        try {
+            TypedQuery<Employee> query 
+                    = em.createQuery("SELECT e FROM Employee e WHERE e.id = :id", Employee.class);
+            query.setParameter("id", id);
+            return query.getResultList().get(0);
+        } finally {
+            em.close();
+        }
     }
 
     public Employee getEmployeeByName(String name) {
         EntityManager em = getEntityManager();
-        return (Employee) em.createQuery("SELECT c FROM c.EMPLOYEE WHERE c.Name = :" + name).getResultList().get(0);
+        try {
+            TypedQuery<Employee> query 
+                    = em.createQuery("SELECT e FROM Employee e WHERE e.name = :name", Employee.class);
+            query.setParameter("name", name);
+            return query.getResultList().get(0);
+        } finally {
+            em.close();
+        }
+        
     }
 
     public List<Employee> getAllEmployees() {
         EntityManager em = getEntityManager();
-        return em.createQuery("SELECT c FROM c.EMPLOYEE").getResultList();
+        try {
+            TypedQuery<Employee> query 
+                    = em.createQuery("SELECT e FROM Employee e", Employee.class);
+            return query.getResultList();
+        } finally {
+            em.close();
+        }
     }
 
     public Employee createEmployee(Employee e) {
@@ -64,18 +86,38 @@ public class EmployeeFacade {
         }
 
     }
-
+    
+    public List<Employee> getEmployeesWithHighestSalary() {
+        EntityManager em = getEntityManager();
+        
+        try {
+            TypedQuery<Employee> query 
+                    = em.createQuery("SELECT e FROM Employee e WHERE e.salary = (SELECT MAX(x.salary) FROM Employee x)", Employee.class);
+            return query.getResultList();
+        } finally {
+            em.close();
+        }
+    }
+   
     public static void main(String[] args) {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("pu");
-        EmployeeFacade ef = new EmployeeFacade();
+        EmployeeFacade ef = getEmployeeFacade(emf);
 
-        Employee e = new Employee("Annika", "annikavej 1", 20000.0);
-        ef.createEmployee(e);
+        /*Employee e = new Employee("Annika", "annikavej 1", 2000.0);
+        Employee e1 = new Employee("Peter", "petervej 1", 100.0);
+        ef.createEmployee(e1);
+        ef.createEmployee(e);*/
+        List<Employee> e = ef.getAllEmployees();
+        for(Employee em: e) {
+            System.out.println(em.getName());
+        }
+        
+        //ef.getEmployeeById(1);
+        //ef.getEmployeeByName("Peter");
+        List<Employee> empl = ef.getEmployeesWithHighestSalary();
+        for(Employee em: empl) {
+            System.out.println(em.getSalary());
+        }
+        
     }
-
-    /**
-     * getEmployeeById getEmployeesByName getAllEmployees
-     * getEmployeesWithHighestSalary
-createEmployee
-     */
 }
